@@ -36,6 +36,8 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 			//syscall.CLONE_NEWUSER | //创建一个user namespace
 			syscall.CLONE_NEWNET, // 创建一个network namespace
 	}
+	//busybox目录
+	cmd.Dir = "/root/busybox"
 
 	if tty {
 		cmd.Stdin = os.Stdin
