@@ -16,19 +16,18 @@ import (
 3.下面的clone参数就是去fork出来一个新进程，并且使用了namespace隔离创建的进程和外部环境。
 4.如果用户指定了 -ti 参数，就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, command string) *exec.Cmd {
-	logrus.Infof("NewParentProcess: %s", command)
+func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+	//logrus.Infof("NewParentProcess: %s", command)
+	readPipe, writePipe, err := NewPipe()
+	if err != nil {
+		logrus.Errorf("New pipe error %v", err)
+		return nil, nil
+	}
 
-	args := []string{"init", command}
-	//1.UTS Namespace 主要用来隔离 hostname（主机名） 和 domainname（域名） 两个系统标识
-	//2.IPC Namespace 用来隔离 System V IPC 和 POSIX message queues(可以简单理解进程间通信用的消息队列)
-	//3.PID Namespace 是用来隔离进程 ID 的
-	//4.Mount Namespace 用来隔 离各个进程看到 的挂载点视图
-	//5.User N amespace 主要是隔离用户 的 用A户组 ID 。
-	//6.Network Namespace 是用来隔离网络设备、 IP 地址端口 等网络械的 Namespace
+	//args := []string{"init", command}
 
 	//fork出来的新进程内的初始命令,默认使用sh来执行
-	cmd := exec.Command("/proc/self/exe", args...)
+	cmd := exec.Command("/proc/self/exe", "init")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | //创建一个uts namespace
 			syscall.CLONE_NEWIPC | //创建一个ipc namespace
@@ -44,5 +43,20 @@ func NewParentProcess(tty bool, command string) *exec.Cmd {
 		cmd.Stderr = os.Stderr
 	}
 
-	return cmd
+	//注意，改动在这里，在这个地方传入管道文件读取端的句柄
+	//这个属性的意思是会外带着这个文件句柄去创建子进程。为什么叫“外带着” 呢?
+	//因为1个进程默认会有3个文件描述符,分别是标准输入、标准输出、标准错误。这3个是子进程一
+	//创建的时候就会默认带着的,那么外带的这个文件描述符理所当然地就成为了第4个。
+	cmd.ExtraFiles = []*os.File{readPipe}
+	return cmd, writePipe
+}
+
+// NewPipe 使用Go提供的pipe方法生成一个匿名管道。
+// 这个函数返回两个变量,一个是读一个是写,其类型都是文件类型。
+func NewPipe() (*os.File, *os.File, error) {
+	read, write, err := os.Pipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	return read, write, nil
 }
