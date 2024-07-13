@@ -7,9 +7,6 @@
     <list default="true" id="c70121df-33cd-4f81-9f32-ad827369b2ef" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/container/container_process.go" beforeDir="false" afterPath="$PROJECT_DIR$/container/container_process.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/container/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/container/init.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_command.go" beforeDir="false" afterPath="$PROJECT_DIR$/main_command.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mydocker" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/run.go" beforeDir="false" afterPath="$PROJECT_DIR$/run.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -59,6 +56,17 @@
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
+  </component>
+  <component name="RunAnythingCache">
+    <myKeys>
+      <visibility group="Grunt" flag="true" />
+      <visibility group="Gulp" flag="true" />
+      <visibility group="HTTP 请求" flag="true" />
+      <visibility group="npm" flag="true" />
+      <visibility group="yarn" flag="true" />
+      <visibility group="最近的项目" flag="true" />
+      <visibility group="运行配置" flag="true" />
+    </myKeys>
   </component>
   <component name="RunManager" selected="Go 测试.mydocker/cgroups/subsystems 中的 TestMemoryCgroup">
     <configuration name="go build mydocker" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">

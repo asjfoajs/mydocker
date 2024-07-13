@@ -36,8 +36,9 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 			//syscall.CLONE_NEWUSER | //创建一个user namespace
 			syscall.CLONE_NEWNET, // 创建一个network namespace
 	}
+
 	//busybox目录
-	cmd.Dir = "/root/busybox"
+	//cmd.Dir = "/root/busybox"
 
 	if tty {
 		cmd.Stdin = os.Stdin
@@ -50,6 +51,11 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	//因为1个进程默认会有3个文件描述符,分别是标准输入、标准输出、标准错误。这3个是子进程一
 	//创建的时候就会默认带着的,那么外带的这个文件描述符理所当然地就成为了第4个。
 	cmd.ExtraFiles = []*os.File{readPipe}
+	mntURL := "/root/mnt"
+	rootURL := "/root"
+	NewWorkSpace(rootURL, mntURL)
+	cmd.Dir = mntURL
+
 	return cmd, writePipe
 }
 
@@ -61,4 +67,119 @@ func NewPipe() (*os.File, *os.File, error) {
 		return nil, nil, err
 	}
 	return read, write, nil
+}
+
+func NewWorkSpace(rootURL, mntURL string) {
+	CreateReadOnlyLayer(rootURL)
+	CreteWriteLayer(rootURL)
+	CreteWorkDir(rootURL)
+	CreateMountPoint(rootURL, mntURL)
+}
+
+// CreateReadOnlyLayer 将busybox.tar解压到busybox目录下，作为容器的只读层
+func CreateReadOnlyLayer(rootURL string) {
+	busyboxURL := rootURL + "/busybox"
+	busyboxTarUrl := rootURL + "busybox.tar"
+	exists, err := PathExists(busyboxURL)
+
+	if err != nil {
+		logrus.Infof("Fail to judge whether dir %s exists., %v", busyboxURL, err)
+	}
+
+	if exists == false {
+		if err := os.Mkdir(busyboxURL, 0777); err != nil {
+			logrus.Infof("Fail to create dir %s, %v", busyboxURL, err)
+		}
+
+		if _, err := exec.Command("tar", "-xvf", busyboxTarUrl, "-C", busyboxURL).CombinedOutput(); err != nil {
+			logrus.Errorf("untTar dir %s error %v", busyboxTarUrl, err)
+		}
+
+	}
+
+}
+
+func CreteWorkDir(rootURL string) {
+	writeURL := rootURL + "/work"
+	if err := os.Mkdir(writeURL, 0777); err != nil {
+		logrus.Errorf("Mkdir dir %s error. %v", writeURL, err)
+	}
+}
+
+// CreteWriteLayer 创建一个名为WriteLayer的文件夹作为容器唯一的可写层
+func CreteWriteLayer(rootURL string) {
+	writeURL := rootURL + "/writeLayer"
+	if err := os.Mkdir(writeURL, 0777); err != nil {
+		logrus.Errorf("Mkdir dir %s error. %v", writeURL, err)
+	}
+}
+
+func CreateMountPoint(rootURL, mntURL string) {
+	//创建mnt文件夹作为挂载点
+	if err := os.Mkdir(mntURL, 0777); err != nil {
+		logrus.Infof("Mkdir dir %s error. %v", mntURL, err)
+	}
+
+	//把writeLayer目录和busybox目录mount到mnt目录下
+	//dirs := "dirs=" + rootURL + "writeLayer" + rootURL + "busybox"
+	//cmd := exec.Command("mount", "-t", "aufs", "-0", dirs, "none", mntURL)
+
+	//因为用的overlay2，还需要一个work层
+	//sudo mount -t overlay -o lowerdir=image-layer,upperdir=container-layer,workdir=work none mnt
+	writeURL := rootURL + "/writeLayer"
+	readOnlyURL := rootURL + "/busybox"
+	workURL := rootURL + "/work"
+	cmd := exec.Command("mount", "-t", "overlay", "-o", "lowerdir=", readOnlyURL, ",upperdir="+writeURL, ",workdir=", workURL, "none", mntURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("%v", err)
+	}
+}
+
+func DeleteWorkSpace(rootURL string, mntURL string) {
+	DeleteMountPoint(rootURL, mntURL)
+	DeleteWriteLayer(rootURL)
+	DeleteWorkDir(rootURL)
+}
+
+func DeleteMountPoint(rootURL, mntURL string) {
+	cmd := exec.Command("umount", mntURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("%v", err)
+	}
+	if err := os.RemoveAll(mntURL); err != nil {
+		logrus.Errorf("Remove dir %s error %v", mntURL, err)
+	}
+
+}
+
+func DeleteWorkDir(rootUrl string) {
+	writeURL := rootUrl + "/write"
+	if err := os.RemoveAll(writeURL); err != nil {
+		logrus.Errorf("Remove dir %s error %v", writeURL, err)
+	}
+}
+
+func DeleteWriteLayer(rootUrl string) {
+	writeURL := rootUrl + "/writeLayer"
+	if err := os.RemoveAll(writeURL); err != nil {
+		logrus.Errorf("Remove dir %s error %v", writeURL, err)
+	}
+}
+
+// PathExists 判断文件的路径是否存在
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path) //文件是否可读
+	if err == nil {
+		return true, err
+	}
+
+	if os.IsNotExist(err) { //如果文件不存在，返回false
+		return false, nil
+	}
+
+	return false, err //存在但不可访问
 }

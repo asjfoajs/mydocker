@@ -45,6 +45,12 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
 	//对容器设置完限制之后初始化容器
 	sendInitCommand(comArray, wirtePipe)
 	parent.Wait()
+
+	//卸载并删除
+	mntURL := "/root/mnt/"
+	rootURL := "/root/"
+	container.DeleteWorkSpace(rootURL, mntURL)
+
 	os.Exit(0)
 }
 
