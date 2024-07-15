@@ -18,9 +18,15 @@ var runCommand = cli.Command{
 			Name:  "ti",
 			Usage: "enable tty",
 		},
-		cli.StringFlag{
+
+		cli.StringFlag{ //限制内存
 			Name:  "m",
 			Usage: "memory limit",
+		},
+
+		cli.StringFlag{ //挂存储
+			Name:  "v",
+			Usage: "volume",
 		},
 	},
 
@@ -47,7 +53,9 @@ var runCommand = cli.Command{
 			MemoryLimit: context.String("m"),
 		}
 
-		Run(tty, cmdArray, resConf)
+		//把volume参数传给Run函数
+		volume := context.String("v")
+		Run(tty, cmdArray, resConf, volume)
 		return nil
 	},
 }

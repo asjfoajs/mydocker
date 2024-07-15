@@ -24,9 +24,9 @@ import (
 //	os.Exit(-1)
 //}
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string) {
 	//logrus.Infof("Run command %s", command)
-	parent, wirtePipe := container.NewParentProcess(tty)
+	parent, wirtePipe := container.NewParentProcess(tty, volume)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
 		return
@@ -51,7 +51,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
 	workURL := "/root/worker"
 	rootURL := "/root"
 
-	container.DeleteWorkSpace(rootURL, mntURL, workURL)
+	container.DeleteWorkSpace(rootURL, mntURL, workURL, volume)
 
 	os.Exit(0)
 }

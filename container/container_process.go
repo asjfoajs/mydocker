@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 )
 
@@ -17,7 +18,7 @@ import (
 3.下面的clone参数就是去fork出来一个新进程，并且使用了namespace隔离创建的进程和外部环境。
 4.如果用户指定了 -ti 参数，就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	//logrus.Infof("NewParentProcess: %s", command)
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
@@ -58,7 +59,7 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	mntURL := "/root/mnt"
 	workURL := "/root/worker"
 	rootURL := "/root"
-	NewWorkSpace(rootURL, mntURL, workURL)
+	NewWorkSpace(rootURL, mntURL, workURL, volume)
 	cmd.Dir = mntURL
 
 	return cmd, writePipe
@@ -74,11 +75,24 @@ func NewPipe() (*os.File, *os.File, error) {
 	return read, write, nil
 }
 
-func NewWorkSpace(rootURL, mntURL, workURL string) {
+func NewWorkSpace(rootURL, mntURL, workURL, volume string) {
 	CreateReadOnlyLayer(rootURL)
 	CreteWriteLayer(rootURL)
 	CreteWorkDir(workURL)
 	CreateMountPoint(rootURL, mntURL, workURL)
+
+	//根据volume判断是否执行挂在数据卷的操作
+	if volume != "" {
+		volumeURLs := volumeUrlExtract(volume)
+		length := len(volumeURLs)
+		if length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "" {
+			MountVolume(rootURL, mntURL, volumeURLs)
+			logrus.Infof("%q", volumeURLs)
+		} else {
+			logrus.Infof("Volume parameter input is not correct")
+		}
+
+	}
 }
 
 // CreateReadOnlyLayer 将busybox.tar解压到busybox目录下，作为容器的只读层
@@ -143,8 +157,20 @@ func CreateMountPoint(rootURL, mntURL, workURL string) {
 	}
 }
 
-func DeleteWorkSpace(rootURL, mntURL, workURL string) {
-	DeleteMountPoint(rootURL, mntURL)
+func DeleteWorkSpace(rootURL, mntURL, workURL, volume string) {
+
+	//DeleteMountPoint(rootURL, mntURL)
+	if volume != "" {
+		volumeURLs := volumeUrlExtract(volume)
+		length := len(volumeURLs)
+		if length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "" {
+			DeleteMountPointWithVolume(rootURL, mntURL, volumeURLs)
+		} else {
+			DeleteMountPoint(rootURL, mntURL)
+		}
+	} else {
+		DeleteMountPoint(rootURL, mntURL)
+	}
 	DeleteWriteLayer(rootURL)
 	DeleteWorkDir(workURL)
 }
@@ -163,7 +189,6 @@ func DeleteMountPoint(rootURL, mntURL string) {
 }
 
 func DeleteWorkDir(workURL string) {
-
 	if err := os.RemoveAll(workURL); err != nil {
 		logrus.Errorf("Remove dir %s error %v", workURL, err)
 	}
@@ -188,4 +213,69 @@ func PathExists(path string) (bool, error) {
 	}
 
 	return false, err //存在但不可访问
+}
+
+// MountVolume 挂载数据卷就三步：1.创宿主机的目录2.创容器的目录3.挂载
+func MountVolume(rootURL, mntURL string, volumeURLs []string) {
+	//创建宿主机文件目录,不存在会创建一下
+	parentUrl := volumeURLs[0]
+	if err := os.Mkdir(parentUrl, 0777); err != nil {
+		logrus.Infof("Mkdir parent dir %s error. %v", parentUrl, err)
+	}
+
+	//在容器文件系统里创建挂载点
+	containerUrl := volumeURLs[1]
+	containerVolumeURL := mntURL + containerUrl
+	if err := os.Mkdir(containerVolumeURL, 0777); err != nil {
+		logrus.Infof("Mkdir container dir %s error. %v", containerVolumeURL, err)
+	}
+
+	////把宿主机文件目录挂载到容器挂载点
+	//dirs := "dirs=" + parentUrl
+	//cmd := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", containerVolumeURL)
+
+	////lowerdir=%s,upperdir=%s,workdir=%s
+	//workURL := parentUrl + "Work"
+	//CreteWorkDir(workURL)
+	//cmd := exec.Command("mount", "-t", "overlay",
+	//	"-o", fmt.Sprintf("lowerdir=%s,workdir=%s", parentUrl, workURL),
+	//	"none", containerVolumeURL)
+
+	cmd := exec.Command("mount", "-o", "bind", parentUrl, containerVolumeURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("Mount volume failed. %v", err)
+	}
+}
+
+func DeleteMountPointWithVolume(rootURL, mntURL string, volumeURLS []string) {
+	//卸载容器里volume挂载点的文件系统
+	containerUrl := mntURL + volumeURLS[1]
+	cmd := exec.Command("umount", containerUrl)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("Umount volume failed. %v", err)
+	}
+
+	//卸载整个容器文件系统的挂载点
+	cmd = exec.Command("umount", mntURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("Umount volume failed. %v", err)
+	}
+
+	////删除容器文件系统的挂载点
+	//if err := os.RemoveAll(mntURL); err != nil {
+	//	logrus.Infof("Remove mountpoint dir %s error %v", mntURL, err)
+	//}
+
+	//workURL := volumeURLS[0] + "Work"
+	//DeleteWorkDir(workURL)
+}
+
+func volumeUrlExtract(volume string) []string {
+	return strings.Split(volume, ":")
 }
