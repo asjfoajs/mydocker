@@ -116,6 +116,7 @@ func pivotRoot(root string) error {
 init 挂载点
 */
 func setUpMount() {
+
 	//获取当前路径
 	pwd, err := os.Getwd()
 	if err != nil {

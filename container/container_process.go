@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
@@ -37,6 +38,9 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 			syscall.CLONE_NEWNET, // 创建一个network namespace
 	}
 
+	//因为peer group和propagate type(传播属性)所以要先设置成private并递归
+	syscall.Mount("", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, "")
+
 	//busybox目录
 	//cmd.Dir = "/root/busybox"
 
@@ -52,8 +56,9 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	//创建的时候就会默认带着的,那么外带的这个文件描述符理所当然地就成为了第4个。
 	cmd.ExtraFiles = []*os.File{readPipe}
 	mntURL := "/root/mnt"
+	workURL := "/root/worker"
 	rootURL := "/root"
-	NewWorkSpace(rootURL, mntURL)
+	NewWorkSpace(rootURL, mntURL, workURL)
 	cmd.Dir = mntURL
 
 	return cmd, writePipe
@@ -69,11 +74,11 @@ func NewPipe() (*os.File, *os.File, error) {
 	return read, write, nil
 }
 
-func NewWorkSpace(rootURL, mntURL string) {
+func NewWorkSpace(rootURL, mntURL, workURL string) {
 	CreateReadOnlyLayer(rootURL)
 	CreteWriteLayer(rootURL)
-	CreteWorkDir(rootURL)
-	CreateMountPoint(rootURL, mntURL)
+	CreteWorkDir(workURL)
+	CreateMountPoint(rootURL, mntURL, workURL)
 }
 
 // CreateReadOnlyLayer 将busybox.tar解压到busybox目录下，作为容器的只读层
@@ -99,10 +104,9 @@ func CreateReadOnlyLayer(rootURL string) {
 
 }
 
-func CreteWorkDir(rootURL string) {
-	writeURL := rootURL + "/work"
-	if err := os.Mkdir(writeURL, 0777); err != nil {
-		logrus.Errorf("Mkdir dir %s error. %v", writeURL, err)
+func CreteWorkDir(workURL string) {
+	if err := os.Mkdir(workURL, 0777); err != nil {
+		logrus.Errorf("Mkdir dir %s error. %v", workURL, err)
 	}
 }
 
@@ -114,7 +118,7 @@ func CreteWriteLayer(rootURL string) {
 	}
 }
 
-func CreateMountPoint(rootURL, mntURL string) {
+func CreateMountPoint(rootURL, mntURL, workURL string) {
 	//创建mnt文件夹作为挂载点
 	if err := os.Mkdir(mntURL, 0777); err != nil {
 		logrus.Infof("Mkdir dir %s error. %v", mntURL, err)
@@ -128,8 +132,10 @@ func CreateMountPoint(rootURL, mntURL string) {
 	//sudo mount -t overlay -o lowerdir=image-layer,upperdir=container-layer,workdir=work none mnt
 	writeURL := rootURL + "/writeLayer"
 	readOnlyURL := rootURL + "/busybox"
-	workURL := rootURL + "/work"
-	cmd := exec.Command("mount", "-t", "overlay", "-o", "lowerdir=", readOnlyURL, ",upperdir="+writeURL, ",workdir=", workURL, "none", mntURL)
+	cmd := exec.Command("mount", "-t", "overlay",
+		"-o", fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", readOnlyURL, writeURL, workURL),
+		"none", mntURL)
+	//cmd := exec.Command("mount", "-t", "overlay", "-o", "lowerdir=", readOnlyURL, ",upperdir="+writeURL, ",workdir=", workURL, "none", mntURL)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -137,10 +143,10 @@ func CreateMountPoint(rootURL, mntURL string) {
 	}
 }
 
-func DeleteWorkSpace(rootURL string, mntURL string) {
+func DeleteWorkSpace(rootURL, mntURL, workURL string) {
 	DeleteMountPoint(rootURL, mntURL)
 	DeleteWriteLayer(rootURL)
-	DeleteWorkDir(rootURL)
+	DeleteWorkDir(workURL)
 }
 
 func DeleteMountPoint(rootURL, mntURL string) {
@@ -156,10 +162,10 @@ func DeleteMountPoint(rootURL, mntURL string) {
 
 }
 
-func DeleteWorkDir(rootUrl string) {
-	writeURL := rootUrl + "/write"
-	if err := os.RemoveAll(writeURL); err != nil {
-		logrus.Errorf("Remove dir %s error %v", writeURL, err)
+func DeleteWorkDir(workURL string) {
+
+	if err := os.RemoveAll(workURL); err != nil {
+		logrus.Errorf("Remove dir %s error %v", workURL, err)
 	}
 }
 

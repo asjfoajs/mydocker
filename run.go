@@ -47,9 +47,11 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
 	parent.Wait()
 
 	//卸载并删除
-	mntURL := "/root/mnt/"
-	rootURL := "/root/"
-	container.DeleteWorkSpace(rootURL, mntURL)
+	mntURL := "/root/mnt"
+	workURL := "/root/worker"
+	rootURL := "/root"
+
+	container.DeleteWorkSpace(rootURL, mntURL, workURL)
 
 	os.Exit(0)
 }
