@@ -15,11 +15,11 @@ var runCommand = cli.Command{
 					limit mydocker run -ti [command]`,
 	Flags: []cli.Flag{
 		cli.BoolFlag{
-			Name:  "ti",
+			Name:  "ti", //开启终端交互
 			Usage: "enable tty",
 		},
 		cli.BoolFlag{
-			Name:  "d",
+			Name:  "d", //后台执行
 			Usage: "detach container",
 		},
 		cli.StringFlag{ //限制内存
@@ -30,6 +30,12 @@ var runCommand = cli.Command{
 		cli.StringFlag{ //挂存储
 			Name:  "v",
 			Usage: "volume",
+		},
+
+		//提供run后面的-name指定容器名字参数
+		cli.StringFlag{
+			Name:  "name",
+			Usage: "container name",
 		},
 	},
 
@@ -67,7 +73,10 @@ var runCommand = cli.Command{
 
 		//把volume参数传给Run函数
 		volume := context.String("v")
-		Run(createTty, cmdArray, resConf, volume)
+
+		//将取到的容器名称传递辖区，如果没有则取到的值为空
+		containerName := context.String("name")
+		Run(createTty, cmdArray, resConf, volume, containerName)
 		return nil
 	},
 }

@@ -9,6 +9,23 @@ import (
 	"syscall"
 )
 
+var (
+	RUNNING             string = "running"
+	STOP                string = "stopped"
+	EXIT                string = "exited"
+	DefaultInfoLocation string = "/var/run/mydocker/%s/"
+	ContainerName       string = "config.json"
+)
+
+type ContainerInfo struct {
+	Pid         string `json:"pid"`          //容器的init进程在宿主机上的PID
+	ID          string `json:"id"`           //容器ID
+	Name        string `json:"name"`         //容器名
+	Command     string `json:"command"`      //容器内init进程的运行命令
+	CreatedTime string `json:"created_time"` //创建时间
+	Status      string `json:"status"`       //容器的状态
+}
+
 /*
 这里是父进程，也就是当前进程执行的内容，根据上一章介绍的内容，应该比较容易明白
 1.这里的/proc/self/exe调用中，/proc/self/指的是当前运行进程的自己的环境
