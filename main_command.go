@@ -18,7 +18,10 @@ var runCommand = cli.Command{
 			Name:  "ti",
 			Usage: "enable tty",
 		},
-
+		cli.BoolFlag{
+			Name:  "d",
+			Usage: "detach container",
+		},
 		cli.StringFlag{ //限制内存
 			Name:  "m",
 			Usage: "memory limit",
@@ -45,9 +48,18 @@ var runCommand = cli.Command{
 		for _, arg := range context.Args() {
 			cmdArray = append(cmdArray, arg)
 		}
+
+		createTty := context.Bool("ti")
+		detach := context.Bool("d")
+
+		//这里的createTty和detach不能共存
+		if createTty && detach {
+			return fmt.Errorf("ti and d paramter can not both provided")
+		}
+
 		//打印comArray
 		logrus.Infof("commandArray: %v", cmdArray)
-		tty := context.Bool("ti")
+		//tty := context.Bool("ti")
 
 		resConf := &subsystems.ResourceConfig{
 			MemoryLimit: context.String("m"),
@@ -55,7 +67,7 @@ var runCommand = cli.Command{
 
 		//把volume参数传给Run函数
 		volume := context.String("v")
-		Run(tty, cmdArray, resConf, volume)
+		Run(createTty, cmdArray, resConf, volume)
 		return nil
 	},
 }

@@ -7,6 +7,7 @@ import (
 	"mydocker/container"
 	"os"
 	"strings"
+	"time"
 )
 
 /*
@@ -37,23 +38,30 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume str
 
 	//创建cgroup manager，并通过调用set和apply设置资源限制并使限制在容器上生效
 	cgroupManager := cgroups.NewCgroupManager("mydocker-cgroup")
-	defer cgroupManager.Destroy()
+
+	//defer cgroupManager.Destroy()
+
 	//设置资源限制
 	cgroupManager.Set(res)
 	//将容器进程加入到各个subsystem挂载对应的cgroup中
 	cgroupManager.Apply(parent.Process.Pid)
 	//对容器设置完限制之后初始化容器
 	sendInitCommand(comArray, wirtePipe)
-	parent.Wait()
 
-	//卸载并删除
-	mntURL := "/root/mnt"
-	workURL := "/root/worker"
-	rootURL := "/root"
+	if tty {
+		parent.Wait()
 
-	container.DeleteWorkSpace(rootURL, mntURL, workURL, volume)
+		//卸载并删除
+		mntURL := "/root/mnt"
+		workURL := "/root/worker"
+		rootURL := "/root"
 
-	os.Exit(0)
+		container.DeleteWorkSpace(rootURL, mntURL, workURL, volume)
+
+		os.Exit(0)
+	}
+
+	time.Sleep(2 * time.Minute)
 }
 
 func sendInitCommand(comArray []string, writePipe *os.File) {
