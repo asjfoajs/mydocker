@@ -15,6 +15,7 @@ var (
 	EXIT                string = "exited"
 	DefaultInfoLocation string = "/var/run/mydocker/%s/"
 	ConfigName          string = "config.json"
+	ContainerLogFile    string = "container.log"
 )
 
 type ContainerInfo struct {
@@ -35,7 +36,7 @@ type ContainerInfo struct {
 3.下面的clone参数就是去fork出来一个新进程，并且使用了namespace隔离创建的进程和外部环境。
 4.如果用户指定了 -ti 参数，就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerName string) (*exec.Cmd, *os.File) {
 	//logrus.Infof("NewParentProcess: %s", command)
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
@@ -66,6 +67,22 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else {
+		//生成容器对应目录的container.log文件
+		dirURL := fmt.Sprintf(DefaultInfoLocation, containerName)
+		if err := os.MkdirAll(dirURL, 0622); err != nil {
+			logrus.Errorf("NewParentProcess mkdir %s error %v", dirURL, err)
+			return nil, nil
+		}
+		stdLogFilePath := dirURL + ContainerLogFile
+		stdLogFile, err := os.Create(stdLogFilePath)
+		if err != nil {
+			logrus.Errorf("NewParentProcess create %s error %v", stdLogFilePath, err)
+			return nil, nil
+		}
+		//把生成好的文件赋值给stdout,这样就能把容器内的标准输出重定向到这个文件中
+		cmd.Stdout = stdLogFile
+
 	}
 
 	//注意，改动在这里，在这个地方传入管道文件读取端的句柄

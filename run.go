@@ -31,7 +31,7 @@ import (
 
 func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName string) {
 	//logrus.Infof("Run command %s", command)
-	parent, wirtePipe := container.NewParentProcess(tty, volume)
+	parent, wirtePipe := container.NewParentProcess(tty, volume, containerName)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
 		return

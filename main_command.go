@@ -99,6 +99,7 @@ var initCommand = cli.Command{
 	},
 }
 
+// docker commit 保存镜像
 var commitCommand = cli.Command{
 	Name:  "commit",
 	Usage: "commit a container into image",
@@ -112,11 +113,26 @@ var commitCommand = cli.Command{
 	},
 }
 
+// docker ps 查看容器信息
 var listCommand = cli.Command{
 	Name:  "ps",
 	Usage: "list all the containers",
 	Action: func(context *cli.Context) error {
 		ListContainers()
+		return nil
+	},
+}
+
+// docker logs 查看容器日志
+var logCommand = cli.Command{
+	Name:  "logs",
+	Usage: "print logs of a container",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("missing container name")
+		}
+		containerName := context.Args().Get(0)
+		logContainer(containerName)
 		return nil
 	},
 }
