@@ -14,7 +14,7 @@ var (
 	STOP                string = "stopped"
 	EXIT                string = "exited"
 	DefaultInfoLocation string = "/var/run/mydocker/%s/"
-	ContainerName       string = "config.json"
+	ConfigName          string = "config.json"
 )
 
 type ContainerInfo struct {

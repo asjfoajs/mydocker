@@ -121,7 +121,7 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 		return "", err
 	}
 
-	fileName := dirUrl + "/" + container.ContainerName
+	fileName := dirUrl + "/" + container.ConfigName
 	//创建最终的配置文件config.json文件
 	file, err := os.Create(fileName)
 	defer file.Close()
