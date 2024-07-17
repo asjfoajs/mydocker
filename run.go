@@ -30,6 +30,12 @@ import (
 //}
 
 func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName string) {
+	//首先生成10位容器ID
+	containerId := utils.RanStringBytes(10)
+	//如果用户不指定容器名，那么就以容器id当作容器名
+	if containerName == "" {
+		containerName = containerId
+	}
 	//logrus.Infof("Run command %s", command)
 	parent, wirtePipe := container.NewParentProcess(tty, volume, containerName)
 	if parent == nil {
@@ -41,7 +47,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 	}
 
 	//记录容器信息
-	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerName)
+	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerId, containerName)
 	if err != nil {
 		logrus.Errorf("record container info error %v", err)
 		return
@@ -84,20 +90,20 @@ func sendInitCommand(comArray []string, writePipe *os.File) {
 	writePipe.Close()
 }
 
-func recordContainerInfo(containerPID int, commandArray []string, containerName string) (string, error) {
-	//首先生成10位容器ID
-	id := utils.RanStringBytes(10)
+func recordContainerInfo(containerPID int, commandArray []string, containerId, containerName string) (string, error) {
+	////首先生成10位容器ID
+	//id := utils.RanStringBytes(10)
 	//以当前时间为容器创建时间
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
 	command := strings.Join(commandArray, "")
-	//如果用户不指定容器名，那么就以容器id当作容器名
-	if containerName == "" {
-		containerName = id
-	}
+	////如果用户不指定容器名，那么就以容器id当作容器名
+	//if containerName == "" {
+	//	containerName = id
+	//}
 
 	//生成容器信息的结构体实例
 	containerInfo := &container.ContainerInfo{
-		ID:          id,
+		ID:          containerId,
 		Pid:         strconv.Itoa(containerPID),
 		Command:     command,
 		CreatedTime: currentTime,
