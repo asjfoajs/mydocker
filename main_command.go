@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"os"
 )
 
 // 这里定义了runCommand的Flags，其作用类似于运行命令时使用--来指定参数
@@ -133,6 +134,34 @@ var logCommand = cli.Command{
 		}
 		containerName := context.Args().Get(0)
 		logContainer(containerName)
+		return nil
+	},
+}
+
+// docker exec 进入容器
+var execCommand = cli.Command{
+	Name:  "exec",
+	Usage: "exec a command into container",
+	Action: func(context *cli.Context) error {
+		//非常重要如果是exec的命令并且设置了环境变量，说明是上一次exec调用的，就是为了触发c语言的那个senns
+		if os.Getenv(ENV_EXEC_PID) != "" {
+			logrus.Infof("pid callback pid %s", os.Getegid())
+			return nil
+		}
+
+		//我们希望命令格式是mydocker exec 容器名 命令
+		if len(context.Args()) < 2 {
+			return fmt.Errorf("missing container name and command")
+		}
+
+		containerName := context.Args().Get(0)
+		var commandArray []string
+		//将除了容器名之外的参数当作需要执行的命令处理
+		for _, arg := range context.Args().Tail() {
+			commandArray = append(commandArray, arg)
+		}
+		//执行命令
+		ExecContainer(containerName, commandArray)
 		return nil
 	},
 }
