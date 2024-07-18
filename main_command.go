@@ -179,3 +179,17 @@ var stopCommand = cli.Command{
 		return nil
 	},
 }
+
+// docker rm 删除容器
+var removeCommand = cli.Command{
+	Name:  "rm",
+	Usage: "remove one or more containers",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("missing container name")
+		}
+		containerName := context.Args().Get(0)
+		removeContainer(containerName)
+		return nil
+	},
+}
