@@ -41,6 +41,11 @@ func ExecContainer(containerName string, comArray []string) {
 	os.Setenv(ENV_EXEC_PID, pid)
 	os.Setenv(ENV_EXEC_CMD, cmdStr)
 
+	//获取对应PID的环境变量，其实也就是容器的环境变量
+	containerEnvs := getEnvsByPid(pid)
+	//将宿主机的环境变量和容器的环境变量都放置到exec进程内
+	cmd.Env = append(os.Environ(), containerEnvs...)
+
 	if err := cmd.Run(); err != nil {
 		logrus.Errorf("Exec container %s error %v", containerName, err)
 	}
@@ -62,4 +67,19 @@ func getContainerPidByName(containerName string) (string, error) {
 		return "", err
 	}
 	return containerInfo.Pid, nil
+}
+
+// getEnvsByPid 根据PID获取环境变量
+func getEnvsByPid(pid string) []string {
+	//进程环境变量存放的位置是 /proc/PID/environ
+	path := fmt.Sprintf("/proc/%s/environ", pid)
+	contentBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		logrus.Errorf("Read file %s error %v", path, err)
+		return nil
+	}
+	//多个环境变量中的分割符是\u0000
+	envs := strings.Split(string(contentBytes), "\u0000")
+	return envs
+
 }

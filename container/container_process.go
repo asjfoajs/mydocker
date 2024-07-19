@@ -37,7 +37,7 @@ type ContainerInfo struct {
 3.下面的clone参数就是去fork出来一个新进程，并且使用了namespace隔离创建的进程和外部环境。
 4.如果用户指定了 -ti 参数，就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, volume, containerName, imageName string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerName, imageName string, envSlice *[]string) (*exec.Cmd, *os.File) {
 	//logrus.Infof("NewParentProcess: %s", command)
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
@@ -91,9 +91,8 @@ func NewParentProcess(tty bool, volume, containerName, imageName string) (*exec.
 	//因为1个进程默认会有3个文件描述符,分别是标准输入、标准输出、标准错误。这3个是子进程一
 	//创建的时候就会默认带着的,那么外带的这个文件描述符理所当然地就成为了第4个。
 	cmd.ExtraFiles = []*os.File{readPipe}
-	//mntURL := "/root/mnt"
-	//workURL := "/root/worker"
-	//rootURL := "/root"
+
+	cmd.Env = append(os.Environ(), *envSlice...)
 
 	NewWorkSpace(volume, imageName, containerName)
 	cmd.Dir = GetMerge(containerName)

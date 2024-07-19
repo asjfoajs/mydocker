@@ -20,7 +20,7 @@ func removeContainer(containerName string) {
 		logrus.Errorf("container %s is not stopped", containerName)
 		return
 	}
-
+	//deleteContainerInfo(containerName)
 	//找到对应存储容器信息的文件路径
 	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	//将所有信息包括子目录都删除
@@ -31,4 +31,5 @@ func removeContainer(containerName string) {
 
 	//卸载和解绑
 	container.DeleteWorkSpace(containerInfo.Volume, containerName)
+
 }

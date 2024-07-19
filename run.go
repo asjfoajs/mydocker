@@ -28,7 +28,7 @@ import (
 *这里的Start方法是真正开始前面创建好的command的调用，它首先会clone出来一个namespace隔离的
 进程，然后再子进程中，调用/proc/self/exe，也就是调用自己，发送init参数，调用我们写的init方法，去初始化容器的一些资源。
 */
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string) {
+func Run(tty bool, volume, containerName, imageName string, comArray, envSlice *[]string, res *subsystems.ResourceConfig) {
 	//首先生成10位容器ID
 	containerId := utils.RanStringBytes(10)
 	//如果用户不指定容器名，那么就以容器id当作容器名
@@ -36,7 +36,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 		containerName = containerId
 	}
 	//logrus.Infof("Run command %s", command)
-	parent, wirtePipe := container.NewParentProcess(tty, volume, containerName, imageName)
+	parent, wirtePipe := container.NewParentProcess(tty, volume, containerName, imageName, envSlice)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
 		return
@@ -46,7 +46,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 	}
 
 	//记录容器信息
-	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerId, containerName, volume)
+	containerName, err := recordContainerInfo(parent.Process.Pid, containerId, containerName, volume, comArray)
 	if err != nil {
 		logrus.Errorf("record container info error %v", err)
 		return
@@ -74,7 +74,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 		//workURL := "/root/worker"
 		//rootURL := "/root"
 
-		container.DeleteWorkSpace(volume, imageName)
+		container.DeleteWorkSpace(volume, containerName)
 
 		os.Exit(0)
 	}
@@ -82,19 +82,19 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 	//time.Sleep(2 * time.Minute)
 }
 
-func sendInitCommand(comArray []string, writePipe *os.File) {
-	command := strings.Join(comArray, " ")
+func sendInitCommand(comArray *[]string, writePipe *os.File) {
+	command := strings.Join(*comArray, " ")
 	logrus.Infof("command all is： %s", command)
 	writePipe.WriteString(command)
 	writePipe.Close()
 }
 
-func recordContainerInfo(containerPID int, commandArray []string, containerId, containerName, volume string) (string, error) {
+func recordContainerInfo(containerPID int, containerId, containerName, volume string, commandArray *[]string) (string, error) {
 	////首先生成10位容器ID
 	//id := utils.RanStringBytes(10)
 	//以当前时间为容器创建时间
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
-	command := strings.Join(commandArray, "")
+	command := strings.Join(*commandArray, "")
 	////如果用户不指定容器名，那么就以容器id当作容器名
 	//if containerName == "" {
 	//	containerName = id
@@ -144,8 +144,8 @@ func recordContainerInfo(containerPID int, commandArray []string, containerId, c
 	return containerName, nil
 }
 
-func deleteContainerInfo(containerId string) {
-	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerId)
+func deleteContainerInfo(containerName string) {
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	if err := os.RemoveAll(dirURL); err != nil {
 		logrus.Errorf("Remove dir %s error %v", dirURL, err)
 	}

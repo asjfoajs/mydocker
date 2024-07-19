@@ -38,6 +38,12 @@ var runCommand = cli.Command{
 			Name:  "name",
 			Usage: "container name",
 		},
+
+		//设置环境变量
+		cli.StringSliceFlag{
+			Name:  "e",
+			Usage: "set container's environment",
+		},
 	},
 
 	/**
@@ -81,7 +87,9 @@ var runCommand = cli.Command{
 
 		//将取到的容器名称传递辖区，如果没有则取到的值为空
 		containerName := context.String("name")
-		Run(createTty, cmdArray, resConf, volume, containerName, imageName)
+
+		envSlice := context.StringSlice("e")
+		Run(createTty, volume, containerName, imageName, &cmdArray, &envSlice, resConf)
 		return nil
 	},
 }
