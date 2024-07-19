@@ -14,22 +14,21 @@ import (
 	"time"
 )
 
+// 将RootUrl，MntUrl和WriteLayer添加为全局变量
+// var (
+//
+//	RootURL       string = "/root"
+//	MntURL        string = "/root/mnt/%s"
+//	WriteLayerURL string = "/root/writeLayer/%s"
+//	WorkURL       string = "/root/worker/%s"
+//
+// )
+
 /*
 *这里的Start方法是真正开始前面创建好的command的调用，它首先会clone出来一个namespace隔离的
 进程，然后再子进程中，调用/proc/self/exe，也就是调用自己，发送init参数，调用我们写的init方法，去初始化容器的一些资源。
 */
-//func Run(tty bool, command string) {
-//	logrus.Infof("Run command %s", command)
-//	parent := container.NewParentProcess(tty, command)
-//	if err := parent.Start(); err != nil {
-//		logrus.Error("start parent process error %v", err)
-//	}
-//
-//	parent.Wait()
-//	os.Exit(-1)
-//}
-
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName string) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string) {
 	//首先生成10位容器ID
 	containerId := utils.RanStringBytes(10)
 	//如果用户不指定容器名，那么就以容器id当作容器名
@@ -37,7 +36,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 		containerName = containerId
 	}
 	//logrus.Infof("Run command %s", command)
-	parent, wirtePipe := container.NewParentProcess(tty, volume, containerName)
+	parent, wirtePipe := container.NewParentProcess(tty, volume, containerName, imageName)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
 		return
@@ -47,7 +46,7 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 	}
 
 	//记录容器信息
-	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerId, containerName)
+	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerId, containerName, volume)
 	if err != nil {
 		logrus.Errorf("record container info error %v", err)
 		return
@@ -71,11 +70,11 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume, co
 		deleteContainerInfo(containerName)
 
 		//卸载并删除
-		mntURL := "/root/mnt"
-		workURL := "/root/worker"
-		rootURL := "/root"
+		//mntURL := "/root/mnt"
+		//workURL := "/root/worker"
+		//rootURL := "/root"
 
-		container.DeleteWorkSpace(rootURL, mntURL, workURL, volume)
+		container.DeleteWorkSpace(volume, imageName)
 
 		os.Exit(0)
 	}
@@ -90,7 +89,7 @@ func sendInitCommand(comArray []string, writePipe *os.File) {
 	writePipe.Close()
 }
 
-func recordContainerInfo(containerPID int, commandArray []string, containerId, containerName string) (string, error) {
+func recordContainerInfo(containerPID int, commandArray []string, containerId, containerName, volume string) (string, error) {
 	////首先生成10位容器ID
 	//id := utils.RanStringBytes(10)
 	//以当前时间为容器创建时间
@@ -109,6 +108,7 @@ func recordContainerInfo(containerPID int, commandArray []string, containerId, c
 		CreatedTime: currentTime,
 		Status:      container.RUNNING,
 		Name:        containerName,
+		Volume:      volume,
 	}
 
 	//将容器信息的对象json序列化成字符串

@@ -29,5 +29,6 @@ func removeContainer(containerName string) {
 		return
 	}
 
-	//还差卸载和解绑，后续添加
+	//卸载和解绑
+	container.DeleteWorkSpace(containerInfo.Volume, containerName)
 }

@@ -56,6 +56,10 @@ var runCommand = cli.Command{
 			cmdArray = append(cmdArray, arg)
 		}
 
+		//获取镜像名
+		imageName := cmdArray[0]
+		cmdArray = cmdArray[1:]
+
 		createTty := context.Bool("ti")
 		detach := context.Bool("d")
 
@@ -77,7 +81,7 @@ var runCommand = cli.Command{
 
 		//将取到的容器名称传递辖区，如果没有则取到的值为空
 		containerName := context.String("name")
-		Run(createTty, cmdArray, resConf, volume, containerName)
+		Run(createTty, cmdArray, resConf, volume, containerName, imageName)
 		return nil
 	},
 }
@@ -108,8 +112,9 @@ var commitCommand = cli.Command{
 		if len(context.Args()) < 1 {
 			return fmt.Errorf("missing container name")
 		}
-		imageName := context.Args().Get(0)
-		CommitContainer(imageName)
+		containerName := context.Args().Get(0)
+		imageName := context.Args().Get(1)
+		CommitContainer(containerName, imageName)
 		return nil
 	},
 }
