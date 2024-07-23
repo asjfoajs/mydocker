@@ -202,7 +202,7 @@ func (nw *Network) dump(dumpPath string) error {
 	//打开保存的文件用于写入，后面打开的模式参数分别是存在内容则清空 只写入 不存在则创建
 	nwFile, err := os.OpenFile(nwPath, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		logrus.Errorf("error:", err)
+		logrus.Errorf("error:%v", err)
 		return err
 	}
 	defer nwFile.Close()
@@ -210,14 +210,14 @@ func (nw *Network) dump(dumpPath string) error {
 	//通过json的库序列化网络对象到json的字符串
 	nwJson, err := json.Marshal(nw)
 	if err != nil {
-		logrus.Errorf("error:", err)
+		logrus.Errorf("error:%v", err)
 		return err
 	}
 
 	//将网络配置的json字符串写入到文件中
 	_, err = nwFile.Write(nwJson)
 	if err != nil {
-		logrus.Errorf("error:", err)
+		logrus.Errorf("error:%v", err)
 		return err
 	}
 	return nil
@@ -241,8 +241,16 @@ func (nw *Network) load(dumpPath string) error {
 	//通过json字符串反序列化出网络
 	err = json.Unmarshal(nwJson[:n], nw)
 	if err != nil {
-		logrus.Errorf("Error load nw info:", err)
+		logrus.Errorf("Error load nw info:%v", err)
 		return err
 	}
+	return nil
+}
+
+func configEndpointIpAddressAndRoute(ep *Endpoint, cinfo *container.ContainerInfo) error {
+	return nil
+}
+
+func configPortMapping(ep *Endpoint, cinfo *container.ContainerInfo) error {
 	return nil
 }
