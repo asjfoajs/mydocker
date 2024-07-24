@@ -6,8 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="c70121df-33cd-4f81-9f32-ad827369b2ef" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/network/ipam.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/ipam.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/network/network.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/network.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/bridge.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/bridge.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +41,8 @@
     "Go 测试.TestRelease in mydocker/network.executor": "Debug",
     "Go 测试.ipam_test.go.executor": "Debug",
     "Go 测试.mydocker/cgroups/subsystems 中的 TestMemoryCgroup.executor": "Debug",
+    "Go 测试.mydocker/network 中的 TestBridgerDelete.executor": "Debug",
+    "Go 测试.mydocker/network 中的 TestBridgerInit.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.go.formatter.settings.were.checked": "true",
     "RunOnceActivity.go.migrated.go.modules.settings": "true",
@@ -64,7 +65,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Go 测试.TestAllocate in mydocker/network">
+  <component name="RunManager" selected="Go 测试.mydocker/network 中的 TestBridgerDelete">
     <configuration name="go build ipam.go" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="mydocker" />
       <working_directory value="$PROJECT_DIR$" />
@@ -124,13 +125,39 @@
       <pattern value="^\QTestMemoryCgroup\E$" />
       <method v="2" />
     </configuration>
+    <configuration name="mydocker/network 中的 TestBridgerDelete" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="mydocker" />
+      <working_directory value="$PROJECT_DIR$/network" />
+      <sudo value="true" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="mydocker/network" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestBridgerDelete\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="mydocker/network 中的 TestBridgerInit" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="mydocker" />
+      <working_directory value="$PROJECT_DIR$/network" />
+      <sudo value="true" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="mydocker/network" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestBridgerInit\E$" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerDelete" />
+        <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerInit" />
         <item itemvalue="Go 测试.TestAllocate in mydocker/network" />
         <item itemvalue="Go 测试.TestRelease in mydocker/network" />
         <item itemvalue="Go 构建.go build ipam.go" />
-        <item itemvalue="Go 测试.ipam_test.go" />
-        <item itemvalue="Go 测试.mydocker/cgroups/subsystems 中的 TestMemoryCgroup" />
       </list>
     </recent_temporary>
   </component>
@@ -166,6 +193,16 @@
           <url>file://$PROJECT_DIR$/network/ipam.go</url>
           <line>80</line>
           <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/network/ipam.go</url>
+          <line>142</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/network/ipam.go</url>
+          <line>29</line>
+          <option name="timeStamp" value="6" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
