@@ -1,15 +1,15 @@
 package network
 
 import (
-	"encoding/json"
-	"github.com/sirupsen/logrus"
+	"bytes"
+	"encoding/gob"
 	"mydocker/utils"
 	"net"
 	"os"
 	"path"
 )
 
-const ipamDefaultAllocatorPath = "/var/run/mydocker/network/ipam/subnet.json"
+const ipamDefaultAllocatorPath = "/var/run/mydocker/network/ipam/subnet.gob"
 
 // 存放IP地址分配信息
 type IPAM struct {
@@ -46,13 +46,9 @@ func (ipam *IPAM) load() error {
 		return err
 	}
 
-	//将文件中的内容反射序列化出IP的分配对象
-	err = json.Unmarshal(subnetJson[:n], ipam.Subnets)
-	if err != nil {
-		logrus.Errorf("Error dump allocation info,%v", err)
-		return err
-	}
-
+	//反序列化二进制数据
+	buffer := bytes.NewBuffer(subnetJson[:n])
+	ipam.Subnets = decode(buffer)
 	return nil
 }
 
@@ -77,13 +73,9 @@ func (ipam *IPAM) dump() error {
 		return err
 	}
 
-	//序列化ipam对象到json串
-	subnetJson, err := json.Marshal(ipam.Subnets)
-	if err != nil {
-		return err
-	}
-	//将序列化后的json串写入存储文件
-	_, err = subnetConfigFile.Write(subnetJson)
+	//直接序列化成二进制数据
+	buffer := encode(*ipam.Subnets)
+	_, err = subnetConfigFile.Write(buffer.Bytes())
 	if err != nil {
 		return err
 	}
@@ -163,4 +155,26 @@ func (ipam *IPAM) Release(subnet *net.IPNet, ipaddr *net.IP) error {
 	//保存释放掉IP之后的网段IP分配信息
 	err = ipam.dump()
 	return err
+}
+
+// encode 序列化二进制数据
+func encode(data interface{}) *bytes.Buffer {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(data)
+	if err != nil {
+		return nil
+	}
+	return &buf
+}
+
+// decode 反序列化二进制数据
+func decode(buff *bytes.Buffer) *map[string]*utils.BitMap {
+	dec := gob.NewDecoder(buff)
+	var v map[string]*utils.BitMap
+	err := dec.Decode(&v)
+	if err != nil {
+		return nil
+	}
+	return &v
 }

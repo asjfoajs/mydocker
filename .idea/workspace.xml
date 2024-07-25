@@ -6,9 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="c70121df-33cd-4f81-9f32-ad827369b2ef" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/network/bridge.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/bridge.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/network/bridge_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/bridge_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/ipam.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/ipam.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/network/network.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/network.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/bit_map.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/bit_map.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +56,7 @@
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;go.vgo&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;File.Encoding&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -67,7 +67,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Go 测试.mydocker/network 中的 TestBridgerDelete">
+  <component name="RunManager" selected="Go 测试.TestAllocate in mydocker/network">
     <configuration name="go build ipam.go" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="mydocker" />
       <working_directory value="$PROJECT_DIR$" />
@@ -155,9 +155,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go 测试.TestAllocate in mydocker/network" />
         <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerDelete" />
         <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerInit" />
-        <item itemvalue="Go 测试.TestAllocate in mydocker/network" />
         <item itemvalue="Go 测试.TestRelease in mydocker/network" />
         <item itemvalue="Go 构建.go build ipam.go" />
       </list>
@@ -187,24 +187,34 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/network/ipam.go</url>
-          <line>61</line>
-          <option name="timeStamp" value="2" />
+          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
+          <line>919</line>
+          <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/network/ipam.go</url>
-          <line>80</line>
-          <option name="timeStamp" value="4" />
+          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
+          <line>452</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/network/ipam.go</url>
-          <line>142</line>
-          <option name="timeStamp" value="5" />
+          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
+          <line>731</line>
+          <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/network/ipam.go</url>
-          <line>29</line>
-          <option name="timeStamp" value="6" />
+          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
+          <line>433</line>
+          <option name="timeStamp" value="17" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
+          <line>160</line>
+          <option name="timeStamp" value="20" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
+          <line>379</line>
+          <option name="timeStamp" value="21" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

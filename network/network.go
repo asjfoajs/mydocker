@@ -324,7 +324,7 @@ func enterContainerNetns(enLink *netlink.Link, cinfo *container.ContainerInfo) f
 	// /proc/{pid}/ns/net 打开这个文件的文件描述符就可以来操作Net Namespace
 	// 而ContainerInfo中的Pid，即容器在宿主机上的映射的进程ID
 	// 它对应的/proc/{pid}/ns/net 就是容器内部的Net Namespace
-	f, err := os.OpenFile(fmt.Sprintf("/proc/%c/ns/net", cinfo.Pid), os.O_RDONLY, 0)
+	f, err := os.OpenFile(fmt.Sprintf("/proc/%s/ns/net", cinfo.Pid), os.O_RDONLY, 0)
 	if err != nil {
 		logrus.Errorf("error get container net namespace,%v", err)
 	}
