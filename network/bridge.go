@@ -151,9 +151,45 @@ func (d *BridgeNetworkDriver) Create(subnet string, name string) (*Network, erro
 
 }
 
+// Connect 连接一个网络和网络端点
+// 创建一对Veth，将一端绑定到网桥并激活
 func (d *BridgeNetworkDriver) Connect(network *Network, endpoint *Endpoint) error {
-	//TODO implement me
-	panic("implement me")
+	//获取网络名，即Linux Bridge的名字
+	bridgeName := network.Name
+	//通过接口明获取到Linux Bridge接口的对象和接口属性
+	br, err := netlink.LinkByName(bridgeName)
+	if err != nil {
+		return fmt.Errorf("error get bridge:%v", err)
+	}
+
+	//创建Veth接口的配置
+	la := netlink.NewLinkAttrs()
+	//由于Linux几口明的限制，名字去endpoint ID的前5位
+	la.Name = endpoint.ID[:5] //就是容器ID的前5位
+	//通过设置Veth接口的master属性，设置这个Veth的一端挂载到到网络对应的Linux Bridge上
+	la.MasterIndex = br.Attrs().Index
+
+	//创建Veth对象，通过PeerName属性，设置Veth的另外一端的接口名
+	//配置Veth另外一段的名字cif-{endpoint ID的前5位}
+	endpoint.Device = netlink.Veth{
+		LinkAttrs: la,
+		PeerName:  "cif-" + endpoint.ID[:5],
+	}
+
+	//调用netlink的LinkAdd方法创建Veth接口
+	//因为上面指定了link的MasterIndex是网络对象的Linux Bridge
+	//所以Veth的一段就已经挂在到了网络对应的Linux Bridge上
+	if err := netlink.LinkAdd(&endpoint.Device); err != nil {
+		return fmt.Errorf("error add veth pair:%v", err)
+	}
+
+	//调用netlink的LinkSetUp方法设置Veth接口为up状态
+	//相当于ip link set xxx up 命令
+	if err = netlink.LinkSetUp(&endpoint.Device); err != nil {
+		return fmt.Errorf("Error set Endpoint Device up:%v", err)
+	}
+
+	return nil
 }
 
 func (d *BridgeNetworkDriver) Disconnect(network *Network, endpoint *Endpoint) error {
