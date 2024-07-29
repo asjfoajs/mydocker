@@ -90,6 +90,8 @@ func setInterfaceIP(name string, rawIP string) error {
 		Scope: 0,     // 提供Scope字段的值
 	}
 
+	//logrus.Infoln("set interface ip:%v", addr)
+
 	return netlink.AddrAdd(iface, addr)
 
 }
@@ -128,6 +130,7 @@ func (d *BridgeNetworkDriver) Name() string {
 	return "bridge"
 }
 
+// Create 根据子网信息创建Bridge设备并初始化
 func (d *BridgeNetworkDriver) Create(subnet string, name string) (*Network, error) {
 	//TODO implement me
 	//通过net包中的net.ParseCIDR方法，取到网段的字符串中的网关IP地址和网络IP段
@@ -138,8 +141,9 @@ func (d *BridgeNetworkDriver) Create(subnet string, name string) (*Network, erro
 	ipRange.IP = ip
 	//初始化网络对象
 	n := &Network{
-		IpRange: ipRange,
 		Name:    name,
+		IpRange: ipRange,
+		Driver:  d.Name(),
 	}
 	//配置Linux Bridge
 	err = d.initBridge(n)

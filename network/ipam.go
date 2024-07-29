@@ -28,10 +28,10 @@ var ipAllocator = &IPAM{
 func (ipam *IPAM) load() error {
 	//通过os.Stat函数检查存储文件状态，如果不存在，则说明之前没有分配，则不需要加载
 	if _, err := os.Stat(ipam.SubnetAllocatorPath); err != nil {
-		if os.IsNotExist(err) {
-			return nil
+		if !os.IsNotExist(err) {
+			return err
 		}
-		return err
+		return nil
 	}
 
 	//打开并读取存储文件
@@ -95,8 +95,11 @@ func (ipam *IPAM) Allocate(subnet *net.IPNet) (ip net.IP, err error) {
 	//net.IPNet.Mask.Size()函数会返回网段的子网掩码的总长度和网段前面的固定位的长度
 	//比如"127.0.0.0/8"网段的子网掩码是“255.0.0.0”
 	//那么net.IPNet.Mask.Size()的返回值就是前面255所对应的位数和总位数，即8和32
+	_, subnet, _ = net.ParseCIDR(subnet.String())
 	one, size := subnet.Mask.Size()
 
+	//logrus.Infof("Allocate subnet: %s, size: %d, one: %d", subnet.String(), size, one)
+	//fmt.Printf("Allocate subnet: %s, size: %d, one: %d", subnet.String(), size, one)
 	//如果之前没有分配过这个网段，则初始化网段的分配配置
 	if _, ok := (*ipam.Subnets)[subnet.String()]; !ok {
 		//1 <<unit8(size -one)表示这个网段中有多少个IP地址
@@ -135,6 +138,7 @@ func (ipam *IPAM) Release(subnet *net.IPNet, ipaddr *net.IP) error {
 	ipam.Subnets = &map[string]*utils.BitMap{}
 	//从文件中加载网段的分配信息
 	err := ipam.load()
+
 	if err != nil {
 		return err
 	}

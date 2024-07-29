@@ -50,6 +50,13 @@ type NetworkDriver interface {
 	Delete(network *Network) error                         //删除网络
 }
 
+func init() {
+	//logrus.Print("Init Network")
+	if err := Init(); err != nil {
+		logrus.Errorf("Error Init Network: %s", err)
+		return
+	}
+}
 func Init() error {
 	//加载网络驱动
 	var bridgeDriver = BridgeNetworkDriver{}
@@ -92,6 +99,12 @@ func Init() error {
 }
 
 func ListNetwork() {
+	//networks, err := loadNetwork()
+	//if err != nil {
+	//	logrus.Errorf("Error List Network: %s", err)
+	//	return
+	//}
+
 	//通过前面在mydocker ps时介绍的tabwreite的库去展示网络
 	w := tabwriter.NewWriter(os.Stdout, 12, 1, 3, ' ', 0)
 	//遍历网络信息
@@ -156,6 +169,7 @@ func Content(networkName string, cinfo *container.ContainerInfo) error {
 		return fmt.Errorf("No Such Network:%s", networkName)
 	}
 
+	//logrus.Infoln("Content networkName %s", network.IpRange.IP.To4().String())
 	//通过调用IPAM从网络的网段中获取可用的IP作为容器IP地址
 	ip, err := ipAllocator.Allocate(network.IpRange)
 	if err != nil {
@@ -181,7 +195,7 @@ func Content(networkName string, cinfo *container.ContainerInfo) error {
 	if err = configEndpointIpAddressAndRoute(ep, cinfo); err != nil {
 		return err
 	}
-
+	//logrus.Infoln("configEndpointIpAddressAndRoute3")
 	//配置容器到宿主机的端口映射， 例如mydocker run -p 8080:80 xxx
 	//6.设置端口映射
 	return configPortMapping(ep, cinfo)
@@ -191,19 +205,28 @@ func Content(networkName string, cinfo *container.ContainerInfo) error {
 func (nw *Network) remove(dumpPath string) error {
 	//网络对应的配置文件，即配置目录下的的网络名文件
 	//检查文件状态，如果文件已经不存在就直接返回
-	if _, err := os.Stat(dumpPath); os.IsNotExist(err) {
-		os.MkdirAll(dumpPath, 0644)
-		return os.Remove(path.Join(dumpPath, nw.Name))
+	removePath := path.Join(dumpPath, nw.Name)
+	if _, err := os.Stat(removePath); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		} else {
+			return err
+		}
 	} else {
-		return err
+		//调用os.Remove删除这个网络对应的配置文件
+		return os.Remove(removePath)
 	}
+
 }
 func (nw *Network) dump(dumpPath string) error {
 	//检查保存的目录是否存在，不存在则创建
-	if _, err := os.Stat(dumpPath); os.IsNotExist(err) {
-		os.MkdirAll(dumpPath, 0644)
-	} else {
-		return err
+	if _, err := os.Stat(dumpPath); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+		if err = os.MkdirAll(dumpPath, 0644); err != nil {
+			return fmt.Errorf("create network dump path %s failed", dumpPath)
+		}
 	}
 
 	//保存的文件名是网络的名字
@@ -229,6 +252,7 @@ func (nw *Network) dump(dumpPath string) error {
 		logrus.Errorf("error:%v", err)
 		return err
 	}
+
 	return nil
 }
 
@@ -272,7 +296,7 @@ func configEndpointIpAddressAndRoute(ep *Endpoint, cinfo *container.ContainerInf
 	//执行完函数后，恢复为默认的网络空间
 	defer enterContainerNetns(&peerLink, cinfo)()
 
-	//获取到容器的IP地址及网段，用于配置容器内部几口地址
+	//获取到容器的IP地址及网段，用于配置容器内部端口地址
 	//比如容器IP是192.168.1.2，而网络的网段是192.168.1.0/24
 	//那么这里产出的IP字符串是192.168.1.2/24,用于容器内Veth断点配置
 	interfaceIP := *ep.Network.IpRange
@@ -281,7 +305,7 @@ func configEndpointIpAddressAndRoute(ep *Endpoint, cinfo *container.ContainerInf
 	//调用setInterfaceIP函数设置容器内Veth端点的IP
 	//这个函数，在上一节配置Bridge时有介绍其实现
 	if err = setInterfaceIP(ep.Device.PeerName, interfaceIP.String()); err != nil {
-		return fmt.Errorf("%v,%s", ep.Network, err)
+		return fmt.Errorf("ep.Network：%v,err：%s", ep.Network, err)
 	}
 
 	//启动容器内的Veth端点
@@ -395,4 +419,33 @@ func configPortMapping(ep *Endpoint, cinfo *container.ContainerInfo) error {
 		}
 	}
 	return nil
+}
+
+// LoadFromFile 读取defaultNetworkPath目录下的Network信息存放到内存中，便于使用
+func loadNetwork() (map[string]*Network, error) {
+	networks := map[string]*Network{}
+
+	//检查网络配置目录中的所有文件，并执行第二个参数中的函数指针去处理目录下的每一个文件
+	err := filepath.Walk(defaultNetworkPath, func(nwPath string, info os.FileInfo, err error) error {
+		//如果是目录则跳过
+		if info.IsDir() {
+			return nil
+		}
+
+		//加载文件名作为网络名
+		_, nwName := path.Split(nwPath)
+		nw := &Network{
+			Name: nwName,
+		}
+
+		//调用前面介绍的Network.load方法加载网络的配置信息
+		if err := nw.load(nwPath); err != nil {
+			logrus.Errorf("error load network: %s", err)
+		}
+
+		//将网络的配置信息加入到networks字典中
+		networks[nwName] = nw
+		return nil
+	})
+	return networks, err
 }

@@ -6,9 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="c70121df-33cd-4f81-9f32-ad827369b2ef" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_command.go" beforeDir="false" afterPath="$PROJECT_DIR$/main_command.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mydocker" beforeDir="false" afterPath="$PROJECT_DIR$/mydocker" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/bridge.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/bridge.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/bridge_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/bridge_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/network/ipam.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/ipam.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/ipam_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/ipam_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/network/network.go" beforeDir="false" afterPath="$PROJECT_DIR$/network/network.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/bit_map.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/bit_map.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run.go" beforeDir="false" afterPath="$PROJECT_DIR$/run.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -156,8 +163,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Go 测试.TestAllocate in mydocker/network" />
-        <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerDelete" />
         <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerInit" />
+        <item itemvalue="Go 测试.mydocker/network 中的 TestBridgerDelete" />
         <item itemvalue="Go 测试.TestRelease in mydocker/network" />
         <item itemvalue="Go 构建.go build ipam.go" />
       </list>
@@ -193,11 +200,6 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file:///usr/local/go/src/encoding/json/encode.go</url>
-          <line>452</line>
-          <option name="timeStamp" value="13" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
           <line>731</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
@@ -212,9 +214,14 @@
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file:///usr/local/go/src/encoding/json/encode.go</url>
-          <line>379</line>
-          <option name="timeStamp" value="21" />
+          <url>file://$PROJECT_DIR$/network/network.go</url>
+          <line>231</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/network/network.go</url>
+          <line>251</line>
+          <option name="timeStamp" value="23" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

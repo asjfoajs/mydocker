@@ -7,6 +7,7 @@ import (
 	"mydocker/cgroups"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"mydocker/network"
 	"mydocker/utils"
 	"os"
 	"strconv"
@@ -28,7 +29,7 @@ import (
 *这里的Start方法是真正开始前面创建好的command的调用，它首先会clone出来一个namespace隔离的
 进程，然后再子进程中，调用/proc/self/exe，也就是调用自己，发送init参数，调用我们写的init方法，去初始化容器的一些资源。
 */
-func Run(tty bool, volume, containerName, imageName string, comArray, envSlice *[]string, res *subsystems.ResourceConfig) {
+func Run(tty bool, volume, containerName, imageName, net string, comArray, envSlice, portMapping *[]string, res *subsystems.ResourceConfig) {
 	//首先生成10位容器ID
 	containerId := utils.RanStringBytes(10)
 	//如果用户不指定容器名，那么就以容器id当作容器名
@@ -46,7 +47,7 @@ func Run(tty bool, volume, containerName, imageName string, comArray, envSlice *
 	}
 
 	//记录容器信息
-	containerName, err := recordContainerInfo(parent.Process.Pid, containerId, containerName, volume, comArray)
+	containerInfo, err := recordContainerInfo(parent.Process.Pid, containerId, containerName, volume, comArray, portMapping)
 	if err != nil {
 		logrus.Errorf("record container info error %v", err)
 		return
@@ -61,6 +62,24 @@ func Run(tty bool, volume, containerName, imageName string, comArray, envSlice *
 	cgroupManager.Set(res)
 	//将容器进程加入到各个subsystem挂载对应的cgroup中
 	cgroupManager.Apply(parent.Process.Pid)
+
+	//如果指定了网络信息则进行配置
+	if net != "" {
+		//创建网络配置文件
+		//containerInfo := &container.ContainerInfo{
+		//	Pid:         strconv.Itoa(parent.Process.Pid),
+		//	ID:          containerId,
+		//	Name:        containerName,
+		//	PortMapping: *portMapping,
+		//}
+
+		err := network.Content(net, containerInfo)
+		if err != nil {
+			logrus.Errorf("Error Connect Network %v", err)
+			return
+		}
+	}
+
 	//对容器设置完限制之后初始化容器
 	sendInitCommand(comArray, wirtePipe)
 
@@ -84,12 +103,11 @@ func Run(tty bool, volume, containerName, imageName string, comArray, envSlice *
 
 func sendInitCommand(comArray *[]string, writePipe *os.File) {
 	command := strings.Join(*comArray, " ")
-	logrus.Infof("command all is： %s", command)
 	writePipe.WriteString(command)
 	writePipe.Close()
 }
 
-func recordContainerInfo(containerPID int, containerId, containerName, volume string, commandArray *[]string) (string, error) {
+func recordContainerInfo(containerPID int, containerId, containerName, volume string, commandArray, portMapping *[]string) (*container.ContainerInfo, error) {
 	////首先生成10位容器ID
 	//id := utils.RanStringBytes(10)
 	//以当前时间为容器创建时间
@@ -109,13 +127,14 @@ func recordContainerInfo(containerPID int, containerId, containerName, volume st
 		Status:      container.RUNNING,
 		Name:        containerName,
 		Volume:      volume,
+		PortMapping: *portMapping,
 	}
 
 	//将容器信息的对象json序列化成字符串
 	jsonBytes, err := json.Marshal(containerInfo)
 	if err != nil {
 		logrus.Errorf("Record container info error %v", err)
-		return "", err
+		return nil, err
 	}
 	jsonStr := string(jsonBytes)
 
@@ -124,7 +143,7 @@ func recordContainerInfo(containerPID int, containerId, containerName, volume st
 	//如果该路径不存在，就级联地全部创建
 	if err = os.MkdirAll(dirUrl, 0622); err != nil {
 		logrus.Errorf("mkdir container info path %s error %v", dirUrl, err)
-		return "", err
+		return nil, err
 	}
 
 	fileName := dirUrl + "/" + container.ConfigName
@@ -133,7 +152,7 @@ func recordContainerInfo(containerPID int, containerId, containerName, volume st
 	defer file.Close()
 	if err != nil {
 		logrus.Errorf("Create file %s error %v", fileName, err)
-		return "", err
+		return nil, err
 	}
 
 	//将json序列化后的字符串写入到文件中
@@ -141,7 +160,7 @@ func recordContainerInfo(containerPID int, containerId, containerName, volume st
 		logrus.Errorf("File write string error %v", err)
 	}
 
-	return containerName, nil
+	return containerInfo, nil
 }
 
 func deleteContainerInfo(containerName string) {

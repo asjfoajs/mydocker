@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 	"mydocker/cgroups/subsystems"
 	"mydocker/container"
+	"mydocker/network"
 	"os"
 )
 
@@ -16,7 +17,7 @@ var runCommand = cli.Command{
 					limit mydocker run -ti [command]`,
 	Flags: []cli.Flag{
 		cli.BoolFlag{
-			Name:  "ti", //开启终端交互
+			Name:  "it", //开启终端交互
 			Usage: "enable tty",
 		},
 		cli.BoolFlag{
@@ -44,6 +45,18 @@ var runCommand = cli.Command{
 			Name:  "e",
 			Usage: "set container's environment",
 		},
+
+		//网桥
+		cli.StringFlag{
+			Name:  "net",
+			Usage: "set network for container",
+		},
+
+		//端口
+		cli.StringFlag{
+			Name:  "p",
+			Usage: "set port mapping",
+		},
 	},
 
 	/**
@@ -66,7 +79,7 @@ var runCommand = cli.Command{
 		imageName := cmdArray[0]
 		cmdArray = cmdArray[1:]
 
-		createTty := context.Bool("ti")
+		createTty := context.Bool("it")
 		detach := context.Bool("d")
 
 		//这里的createTty和detach不能共存
@@ -89,7 +102,10 @@ var runCommand = cli.Command{
 		containerName := context.String("name")
 
 		envSlice := context.StringSlice("e")
-		Run(createTty, volume, containerName, imageName, &cmdArray, &envSlice, resConf)
+
+		network := context.String("net")
+		portMapping := context.StringSlice("p")
+		Run(createTty, volume, containerName, imageName, network, &cmdArray, &envSlice, &portMapping, resConf)
 		return nil
 	},
 }
@@ -204,5 +220,72 @@ var removeCommand = cli.Command{
 		containerName := context.Args().Get(0)
 		removeContainer(containerName)
 		return nil
+	},
+}
+
+// docker network
+var networkCommand = cli.Command{
+	Name:  "network",
+	Usage: "container network commands",
+	Subcommands: []cli.Command{
+		{
+			// docker network create 创建一个容器网络
+			// mydocker network create --subset 192.168.0.0/24 --deive bridge testbr
+			Name:  "create",
+			Usage: "create a container network",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "driver",
+					Usage: "set the network driver",
+				},
+				cli.StringFlag{
+					Name:  "subnet",
+					Usage: "set the subnet of network",
+				},
+			},
+
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("missing network name")
+				}
+
+				diver := context.String("driver")
+				subnet := context.String("subnet")
+				name := context.Args()[0]
+
+				err := network.CreateNetwork(diver, subnet, name)
+				if err != nil {
+					return fmt.Errorf("create network error:%+v", err)
+				}
+				return nil
+			},
+		},
+		{
+			// docker network ls 查看所有容器网络
+			Name:    "list",
+			Aliases: []string{"ls"},
+			Usage:   "list all container network",
+			Action: func(context *cli.Context) error {
+				network.ListNetwork()
+				return nil
+			},
+		},
+		{
+			// docker network rm 删除一个容器网络
+			Name:    "remove",
+			Aliases: []string{"rm"},
+			Usage:   "remove a container network",
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("missing network name")
+				}
+				name := context.Args()[0]
+				err := network.DeleteNetwork(name)
+				if err != nil {
+					return fmt.Errorf("remove network error:%+v", err)
+				}
+				return nil
+			},
+		},
 	},
 }
